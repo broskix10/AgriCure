@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Link, useNavigate } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/contexts/AuthContext";
 
 const Login = () => {
   const [email, setEmail] = useState("");
@@ -13,26 +14,28 @@ const Login = () => {
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { signIn } = useAuth();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
 
-    // Extract name from email for demo purposes
-    const userName = email.split('@')[0].replace(/[^a-zA-Z\s]/g, '').replace(/\b\w/g, l => l.toUpperCase()) || 'Farmer';
-    
-    // Store user name in localStorage for dashboard use
-    localStorage.setItem('userName', userName);
+    const { error } = await signIn(email, password);
 
-    // Simulate login - replace with actual authentication
-    setTimeout(() => {
+    if (error) {
+      toast({
+        title: "Login Failed",
+        description: error.message || "Invalid email or password",
+        variant: "destructive",
+      });
+      setIsLoading(false);
+    } else {
       toast({
         title: "Login Successful",
-        description: `Welcome back, ${userName}!`,
+        description: "Welcome back to AgriCure!",
       });
       navigate("/dashboard");
-      setIsLoading(false);
-    }, 1000);
+    }
   };
 
   const handleBack = () => {

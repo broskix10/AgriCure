@@ -5,6 +5,11 @@ import EnhancedFarmOverview from "@/components/EnhancedFarmOverview";
 import RealTimeSoilAnalysis from "@/components/RealTimeSoilAnalysis";
 import EnhancedFertilizerForm from "@/components/EnhancedFertilizerForm";
 import EnhancedFertilizerRecommendations from "@/components/EnhancedFertilizerRecommendations";
+import RecommendationHistory from "@/components/RecommendationHistory";
+import ProfileSection from "@/components/ProfileSection";
+import { useAuth } from "@/contexts/AuthContext";
+import { RecommendationService } from "@/services/recommendationService";
+import { useToast } from "@/hooks/use-toast";
 import { predictFertilizer, FERTILIZER_INFO, CROP_TYPES, SOIL_TYPES } from "@/services/fertilizerMLService";
 
 interface FormData {
@@ -68,9 +73,28 @@ const Dashboard = () => {
   const [formData, setFormData] = useState<FormData | null>(null);
   const [recommendations, setRecommendations] = useState<EnhancedRecommendation | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
-  
-  // Get user name from localStorage or use default
-  const userName = localStorage.getItem('userName') || 'John Farmer';
+  const { user, profile, loading } = useAuth();
+  const { toast } = useToast();
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-grass-600"></div>
+        <span className="ml-2">Loading...</span>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <h2 className="text-xl font-semibold mb-2">Please log in to access the dashboard</h2>
+          <p className="text-gray-600">You need to be authenticated to view this page.</p>
+        </div>
+      </div>
+    );
+  }
 
   const generateEnhancedRecommendations = async (data: FormData): Promise<EnhancedRecommendation> => {
     const pH = parseFloat(data.soilPH);
@@ -217,8 +241,49 @@ const Dashboard = () => {
     try {
       const enhancedRecommendations = await generateEnhancedRecommendations(data);
       setRecommendations(enhancedRecommendations);
+
+      // Save recommendation to database
+      if (user) {
+        const recommendationInput = {
+          fieldName: data.fieldName,
+          fieldSize: parseFloat(data.fieldSize),
+          fieldSizeUnit: data.sizeUnit,
+          cropType: Object.keys(CROP_TYPES).find(key => CROP_TYPES[key as keyof typeof CROP_TYPES] === parseInt(data.cropType)) || 'Unknown',
+          soilType: Object.keys(SOIL_TYPES).find(key => SOIL_TYPES[key as keyof typeof SOIL_TYPES] === parseInt(data.soilType)) || 'Unknown',
+          soilPH: parseFloat(data.soilPH),
+          nitrogen: parseFloat(data.nitrogen),
+          phosphorus: parseFloat(data.phosphorus),
+          potassium: parseFloat(data.potassium),
+          temperature: parseFloat(data.temperature),
+          humidity: parseFloat(data.humidity),
+          soilMoisture: parseFloat(data.soilMoisture),
+          mlPredictionFertilizer: enhancedRecommendations.mlPrediction.fertilizer,
+          mlPredictionConfidence: enhancedRecommendations.mlPrediction.confidence,
+          primaryFertilizerName: enhancedRecommendations.primaryFertilizer.name,
+          primaryFertilizerAmount: enhancedRecommendations.primaryFertilizer.amount,
+          secondaryFertilizerName: enhancedRecommendations.secondaryFertilizer.name,
+          secondaryFertilizerAmount: enhancedRecommendations.secondaryFertilizer.amount,
+          totalCostEstimate: enhancedRecommendations.costEstimate.total,
+        };
+
+        const { error } = await RecommendationService.saveRecommendation(user.id, recommendationInput);
+        
+        if (error) {
+          console.error('Failed to save recommendation:', error);
+          toast({
+            title: "Warning",
+            description: "Recommendation generated but failed to save to history.",
+            variant: "destructive",
+          });
+        }
+      }
     } catch (error) {
       console.error('Error generating recommendations:', error);
+      toast({
+        title: "Error",
+        description: "Failed to generate recommendations. Please try again.",
+        variant: "destructive",
+      });
     } finally {
       setIsGenerating(false);
     }
@@ -226,7 +291,7 @@ const Dashboard = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <DashboardHeader userName={userName} />
+      <DashboardHeader userName={profile?.full_name || 'Farmer'} />
       
       <div className="container mx-auto px-2 sm:px-4 py-4 sm:py-8">
         <div className="mb-4 sm:mb-8">
@@ -237,7 +302,7 @@ const Dashboard = () => {
         </div>
 
         <Tabs defaultValue="overview" className="space-y-4 sm:space-y-6">
-          <TabsList className="grid w-full grid-cols-3 h-auto">
+          <TabsList className="grid w-full grid-cols-2 md:grid-cols-5 h-auto">
             <TabsTrigger value="overview" className="text-xs sm:text-sm px-2 sm:px-4 py-2">
               Overview
             </TabsTrigger>
@@ -246,6 +311,12 @@ const Dashboard = () => {
             </TabsTrigger>
             <TabsTrigger value="recommendations" className="text-xs sm:text-sm px-2 sm:px-4 py-2">
               ML Recommendations
+            </TabsTrigger>
+            <TabsTrigger value="history" className="text-xs sm:text-sm px-2 sm:px-4 py-2">
+              History
+            </TabsTrigger>
+            <TabsTrigger value="profile" className="text-xs sm:text-sm px-2 sm:px-4 py-2">
+              Profile
             </TabsTrigger>
           </TabsList>
 
@@ -271,6 +342,14 @@ const Dashboard = () => {
                 formData={formData}
               />
             )}
+          </TabsContent>
+
+          <TabsContent value="history" className="space-y-4 sm:space-y-6">
+            <RecommendationHistory />
+          </TabsContent>
+
+          <TabsContent value="profile" className="space-y-4 sm:space-y-6">
+            <ProfileSection />
           </TabsContent>
         </Tabs>
       </div>

@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Link, useNavigate } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/contexts/AuthContext";
 
 const Signup = () => {
   const [formData, setFormData] = useState({
@@ -18,6 +19,7 @@ const Signup = () => {
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { signUp } = useAuth();
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData(prev => ({
@@ -40,18 +42,27 @@ const Signup = () => {
 
     setIsLoading(true);
 
-    // Store user name for future use
-    localStorage.setItem('userName', formData.name);
+    const { error } = await signUp({
+      email: formData.email,
+      password: formData.password,
+      fullName: formData.name,
+      farmLocation: formData.farmLocation,
+    });
 
-    // Simulate signup - replace with actual authentication
-    setTimeout(() => {
+    if (error) {
+      toast({
+        title: "Signup Failed",
+        description: error.message || "Failed to create account",
+        variant: "destructive",
+      });
+      setIsLoading(false);
+    } else {
       toast({
         title: "Account Created Successfully",
         description: "Welcome to AgriCure! Please sign in to continue.",
       });
       navigate("/login");
-      setIsLoading(false);
-    }, 1000);
+    }
   };
 
   const handleBack = () => {

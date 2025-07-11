@@ -6,9 +6,19 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
+  DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
+import ProfileSection from "@/components/ProfileSection";
 import { useState } from "react";
 
 interface DashboardHeaderProps {
@@ -20,6 +30,7 @@ const DashboardHeader = ({ userName = "John Farmer" }: DashboardHeaderProps) => 
   const { toast } = useToast();
   const { signOut } = useAuth();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isProfileOpen, setIsProfileOpen] = useState(false);
 
   const handleLogout = async () => {
     await signOut();
@@ -30,13 +41,19 @@ const DashboardHeader = ({ userName = "John Farmer" }: DashboardHeaderProps) => 
     navigate("/");
   };
 
+  const handleProfileClick = () => {
+    setIsProfileOpen(true);
+    setIsMobileMenuOpen(false);
+  };
   return (
-    <header className="bg-white border-b border-gray-200 sticky top-0 z-40 shadow-sm backdrop-blur-sm bg-white/95">
+    <>
+      <header className="bg-white border-b border-gray-200 sticky top-0 z-40 shadow-sm backdrop-blur-sm bg-white/95">
       <div className="container mx-auto px-2 sm:px-4 py-3 sm:py-4">
-        <div className="flex items-center justify-between">
+                  <DropdownMenuItem onClick={handleProfileClick} className="hover:bg-grass-50 transition-colors duration-200">
           <Link to="/" className="flex items-center space-x-2 group transition-all duration-300 hover:scale-105">
             <img src="/logo.png" alt="AgriCure Logo" className="h-6 w-6 sm:h-8 sm:w-8 transition-transform duration-300 group-hover:rotate-12" />
             <span className="text-lg sm:text-xl md:text-2xl font-bold text-grass-800 transition-colors duration-300 group-hover:text-grass-600">AgriCure</span>
+                  <DropdownMenuSeparator />
           </Link>
           
           {/* Desktop Menu */}
@@ -76,10 +93,11 @@ const DashboardHeader = ({ userName = "John Farmer" }: DashboardHeaderProps) => 
                 <div className="px-3 py-2 border-b bg-grass-50">
                   <p className="text-sm font-medium text-gray-900">{userName}</p>
                   <p className="text-xs text-gray-500">Farmer Dashboard</p>
-                </div>
+                  <DropdownMenuItem onClick={handleProfileClick} className="hover:bg-grass-50 transition-colors duration-200">
                 <DropdownMenuItem className="hover:bg-grass-50 transition-colors duration-200">
                   <User className="mr-2 h-4 w-4" />
                   Profile
+                  <DropdownMenuSeparator />
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={handleLogout} className="hover:bg-red-50 text-red-600 transition-colors duration-200">
                   <LogOut className="mr-2 h-4 w-4" />
@@ -90,8 +108,21 @@ const DashboardHeader = ({ userName = "John Farmer" }: DashboardHeaderProps) => 
           </div>
         </div>
       </div>
-    </header>
+      </header>
   );
 };
 
+      {/* Profile Dialog */}
+      <Dialog open={isProfileOpen} onOpenChange={setIsProfileOpen}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-bold text-grass-800">Profile Settings</DialogTitle>
+            <DialogDescription>
+              Manage your account details and farm information
+            </DialogDescription>
+          </DialogHeader>
+          <ProfileSection />
+        </DialogContent>
+      </Dialog>
+    </>
 export default DashboardHeader;

@@ -302,7 +302,7 @@ const Dashboard = () => {
         </div>
 
         <Tabs defaultValue="overview" className="space-y-4 sm:space-y-6">
-          <TabsList className="grid w-full grid-cols-2 md:grid-cols-5 h-auto">
+          <TabsList className="grid w-full grid-cols-2 md:grid-cols-4 h-auto">
             <TabsTrigger value="overview" className="text-xs sm:text-sm px-2 sm:px-4 py-2">
               Overview
             </TabsTrigger>
@@ -312,16 +312,13 @@ const Dashboard = () => {
             <TabsTrigger value="recommendations" className="text-xs sm:text-sm px-2 sm:px-4 py-2">
               ML Recommendations
             </TabsTrigger>
-            <TabsTrigger value="history" className="text-xs sm:text-sm px-2 sm:px-4 py-2">
-              History
-            </TabsTrigger>
-            <TabsTrigger value="profile" className="text-xs sm:text-sm px-2 sm:px-4 py-2">
-              Profile
-            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="overview" className="space-y-4 sm:space-y-6">
-            <EnhancedFarmOverview />
+            <div className="space-y-4 sm:space-y-6">
+              <EnhancedFarmOverview />
+              <RecommendationHistory />
+            </div>
           </TabsContent>
 
           <TabsContent value="soil-analysis" className="space-y-4 sm:space-y-6">
@@ -342,14 +339,6 @@ const Dashboard = () => {
                 formData={formData}
               />
             )}
-          </TabsContent>
-
-          <TabsContent value="history" className="space-y-4 sm:space-y-6">
-            <RecommendationHistory />
-          </TabsContent>
-
-          <TabsContent value="profile" className="space-y-4 sm:space-y-6">
-            <ProfileSection />
           </TabsContent>
         </Tabs>
       </div>

@@ -126,3 +126,5 @@ const DashboardHeader = ({ userName = "John Farmer" }: DashboardHeaderProps) => 
       </Dialog>
     </>
 export default DashboardHeader;
+  )
+}
